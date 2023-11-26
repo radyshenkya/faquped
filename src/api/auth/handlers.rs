@@ -1,4 +1,5 @@
 use axum::{extract::State, Json};
+use hyper::StatusCode;
 use jsonwebtoken::get_current_timestamp;
 use log::warn;
 use serde::Deserialize;
@@ -28,7 +29,7 @@ pub async fn signup(
         return Err(ApiError::UserAlreadyRegistered);
     }
 
-    Ok(().into())
+    Ok(((), StatusCode::CREATED).into())
 }
 
 pub async fn login(
