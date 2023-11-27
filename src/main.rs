@@ -18,7 +18,7 @@ async fn main() {
     let state = app_state();
 
     let app = Router::new()
-        .nest("/api", api::routes(state.api_state.clone()))
+        .nest("/api", api::routes(state.clone()))
         .layer(
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
@@ -34,16 +34,14 @@ async fn main() {
 
 fn app_state() -> AppState {
     AppState {
-        api_state: api::state::ApiState {
-            jwt_state: jwt::JwtDecoderState {
-                decoding_key: jsonwebtoken::DecodingKey::from_secret(
-                    env_args::ARGS.jwt_secret.as_bytes(),
-                ),
-                encoding_key: jsonwebtoken::EncodingKey::from_secret(
-                    env_args::ARGS.jwt_secret.as_bytes(),
-                ),
-                validation: jsonwebtoken::Validation::default(),
-            },
+        jwt_state: jwt::JwtDecoderState {
+            decoding_key: jsonwebtoken::DecodingKey::from_secret(
+                env_args::ARGS.jwt_secret.as_bytes(),
+            ),
+            encoding_key: jsonwebtoken::EncodingKey::from_secret(
+                env_args::ARGS.jwt_secret.as_bytes(),
+            ),
+            validation: jsonwebtoken::Validation::default(),
         },
     }
 }

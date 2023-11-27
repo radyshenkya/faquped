@@ -42,7 +42,7 @@ pub struct JwtDecoderState {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Claims<T>(T);
+pub struct Claims<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequestParts<S> for Claims<T>

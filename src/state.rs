@@ -1,8 +1,8 @@
 use axum::extract::FromRef;
 
-use crate::api::state::ApiState;
+use crate::jwt::JwtDecoderState;
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
-    pub api_state: ApiState,
+    pub jwt_state: JwtDecoderState,
 }

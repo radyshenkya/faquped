@@ -7,26 +7,38 @@ use thiserror::Error;
 #[derive(Error, Debug, Serialize)]
 pub enum ApiError {
     #[error("Signing up failed. This user is already registered.")]
+    // #[serde(serialize_with = "display_serialize")]
     UserAlreadyRegistered,
     #[error("Logging in failed. Invalid user credentials")]
+    // #[serde(serialize_with = "display_serialize")]
     InvalidUserCredentials,
+
+    #[error("Cannot modify this resource")]
+    CannotModifyResource,
+    #[error("Not found")]
+    ResourceNotFound,
+
     #[error(transparent)]
     ValidationFailed(#[from] serde_valid::validation::Errors),
     // TODO: Remove it
     #[error(transparent)]
+    // #[serde(serialize_with = "display_serialize")]
     Database(#[from] surrealdb::Error),
-    #[error("Unknown internal error. {0}")]
-    Internal(String),
+    #[error("Unknown internal error.")]
+    // #[serde(serialize_with = "display_serialize")]
+    Internal,
 }
 
 impl ApiError {
     fn status_code(&self) -> StatusCode {
         match self {
+            ApiError::CannotModifyResource => StatusCode::FORBIDDEN,
+            ApiError::ResourceNotFound => StatusCode::NOT_FOUND,
             ApiError::UserAlreadyRegistered => StatusCode::CONFLICT,
             ApiError::InvalidUserCredentials => StatusCode::UNAUTHORIZED,
             ApiError::ValidationFailed(_) => StatusCode::BAD_REQUEST,
-            ApiError::Database(_err) => StatusCode::INTERNAL_SERVER_ERROR,
-            ApiError::Internal(_err) => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::Internal => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

@@ -1,31 +1,28 @@
 mod auth;
-mod response_wrapper;
-mod model;
-pub mod util;
 pub mod error;
 pub mod handlers;
+mod model;
+mod response_wrapper;
 pub mod state;
+pub mod util;
 
-use axum::{middleware::from_extractor_with_state, response::IntoResponse, routing::get, Router};
-use log::info;
+use axum::{middleware::from_extractor_with_state, routing::{post, delete, get}, Router};
 pub use model::*;
 
 use crate::{jwt::Claims, state::AppState};
 
-use self::{state::ApiState, auth::UserClaims, error::ApiError};
+use self::{auth::UserClaims, error::ApiError};
 
 pub type ApiResponse<T> = Result<response_wrapper::ApiResponseWrapper<T>, ApiError>;
 
-pub fn routes(api_state: ApiState) -> Router<AppState> {
+pub fn routes(app_state: AppState) -> Router<AppState> {
     Router::new()
-        .route("/test", get(test_handler))
-        .layer(from_extractor_with_state::<Claims<UserClaims>, ApiState>(
-            api_state,
+        .route("/faq", post(handlers::create_faq))
+        .route("/faq/:id", delete(handlers::delete_faq))
+        .route("/faq/:id", post(handlers::update_faq))
+        .layer(from_extractor_with_state::<Claims<UserClaims>, AppState>(
+            app_state,
         ))
+        .route("/faq/:id", get(handlers::get_faq))
         .nest("/auth", auth::routes())
-}
-
-async fn test_handler() -> impl IntoResponse {
-    info!("yeah");
-    "ABOBA"
 }

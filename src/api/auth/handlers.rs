@@ -5,11 +5,10 @@ use log::warn;
 use serde::Deserialize;
 use serde_valid::Validate;
 
-use crate::api::{
-    auth::UserClaims, error::ApiError, state::ApiState, table_name, ApiResponse, User, DB,
-};
+use crate::api::{auth::UserClaims, error::ApiError, table_name, ApiResponse, User, DB};
 
 use crate::api::util::hash_password;
+use crate::state::AppState;
 
 pub async fn signup(
     // State(api_state): State<ApiState>,
@@ -18,8 +17,20 @@ pub async fn signup(
     payload.validate()?;
 
     let user: Option<User> = DB
+        .query("SELECT * FROM type::table($table) WHERE username = $username LIMIT 1")
+        .bind(("table", "user"))
+        .bind(("username", &payload.username))
+        .await?
+        .take(0)?;
+
+    if let Some(_user) = user {
+        return Err(ApiError::UserAlreadyRegistered);
+    }
+
+    let user: Option<User> = DB
         .create((table_name::USER, &payload.username))
         .content(User {
+            id: None,
             username: payload.username,
             password: hash_password(&payload.password),
         })
@@ -33,7 +44,7 @@ pub async fn signup(
 }
 
 pub async fn login(
-    State(api_state): State<ApiState>,
+    State(app_state): State<AppState>,
     Json(payload): Json<LoginPayload>,
 ) -> ApiResponse<String> {
     payload.validate()?;
@@ -63,12 +74,12 @@ pub async fn login(
     match jsonwebtoken::encode(
         &jsonwebtoken::Header::default(),
         &user_claims,
-        &api_state.jwt_state.encoding_key,
+        &app_state.jwt_state.encoding_key,
     ) {
         Ok(token) => Ok(token.into()),
         Err(e) => {
             warn!("{e:?}");
-            Err(ApiError::Internal(String::from("")))
+            Err(ApiError::Internal)
         }
     }
 }
