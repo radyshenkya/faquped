@@ -17,6 +17,7 @@ pub type ApiResponse<T> = Result<response_wrapper::ApiResponseWrapper<T>, ApiErr
 
 pub fn routes(app_state: AppState) -> Router<AppState> {
     Router::new()
+        .route("/faq", get(handlers::get_my_faqs))
         .route("/faq", post(handlers::create_faq))
         .route("/faq/:id", delete(handlers::delete_faq))
         .route("/faq/:id", post(handlers::update_faq))

@@ -26,9 +26,13 @@ pub struct FaqPage {
     pub plates: Vec<FaqPlate>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, serde_valid::Validate)]
 pub struct FaqPlate {
+    #[validate(min_length = 1)]
+    #[validate(max_length = 400)]
     pub name: String,
+    #[validate(min_length = 1)]
+    #[validate(max_length = 1000)]
     pub content: String,
 }
 
