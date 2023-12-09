@@ -1,0 +1,38 @@
+services:
+  app:
+    image: faquped
+    build: ./
+    command: sh -c "cargo run --release"
+    working_dir: /app
+    ports:
+      - 127.0.0.1:8000:3000
+    env_file:
+      - .env
+    environment:
+      SERVER_IP: 0.0.0.0:3000
+      DB_HOST: ws://surreal:8000
+    networks:
+      faquped:
+        aliases:
+          - app
+    depends_on:
+      - surreal
+
+  surreal:
+    image: surrealdb/surrealdb
+      # volumes:
+      #   - surreal_data:/db
+    env_file:
+      - .env
+        # command: start file:/db/my_db.db --user $DB_USER --pass $DB_PASSWORD --auth
+    command: start memory --user $DB_USER --pass $DB_PASSWORD --auth
+    networks:
+      faquped:
+        aliases:
+          - surreal
+
+            # volumes:
+            #   surreal_data:
+
+networks:
+  faquped:
