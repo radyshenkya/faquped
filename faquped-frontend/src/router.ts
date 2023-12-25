@@ -1,30 +1,80 @@
 import HttpStatusCode from "./http_status_codes";
 
-type RouteCallbackProps = {
+export type RouteHandlerProps = {
     path: string,
     path_params: Record<string, string>,
 };
 
-type RouteError = {
-    httpStatusCode: HttpStatusCode,
-    message: string,
+export class RouteError {
+    httpStatusCode: HttpStatusCode;
+    message: string;
+    additionalData: any;
+
+    constructor(httpStatusCode: HttpStatusCode, message: string, additionalData: any) {
+        this.httpStatusCode = httpStatusCode;
+        this.message = message;
+        this.additionalData = additionalData;
+    }
 };
 
-type RouteErrorHandler = (err: RouteError) => void;
-type RouteHandler = (props: RouteCallbackProps) => void;
-type Routes = Record<string, RouteHandler>;
+export type RouteErrorHandler = (err: RouteError) => void;
+export type RouteHandler = (props: RouteHandlerProps) => void;
+export type Routes = { [path: string]: RouteHandler };
+
+const ROUTE_NOT_FOUND_ERROR = new RouteError(
+    HttpStatusCode.NOT_FOUND,
+    "Path did not match any route in router",
+    null,
+);
 
 export class Router {
     routes: Routes = {};
-    error_route: RouteErrorHandler = (_err: RouteError) => console.error("Error handler is not specified");
+    error_route: RouteErrorHandler = (err: any) => console.error("Error handler is not specified", err);
 
     constructor(routes: Routes, error_route: RouteErrorHandler) {
         this.routes = routes;
         this.error_route = error_route;
     }
+
+    route(path: string) {
+        for (const [template, callback] of Object.entries(this.routes)) {
+            let parsedProps = parsePathByTemplate(template, path);
+
+            if (parsedProps == null) {
+                continue;
+            }
+
+            try {
+                callback(parsedProps);
+            } catch (e: any) {
+                this.error_route(e);
+            } finally {
+                return;
+            }
+        }
+
+        this.error_route(ROUTE_NOT_FOUND_ERROR);
+    }
+
+    updateClickEvents() {
+        const elems = document.querySelectorAll('a[data-router]');
+
+        for (const el of elems) {
+            if (el.getAttribute('router-listener') === 'true') {
+                continue;
+            }
+
+            el.setAttribute('router-listener', 'true');
+            el.addEventListener('click', (ev: any) => {
+                ev.preventDefault();
+                history.pushState({}, "", ev.target.href);
+                this.route(ev.target.pathname);
+            });
+        }
+    }
 }
 
-export function parsePathByTemplate(template: string, path: string): RouteCallbackProps | null {
+export function parsePathByTemplate(template: string, path: string): RouteHandlerProps | null {
     let pathSegments = path.split("/");
     let templateSegments = template.split("/");
 
@@ -50,7 +100,7 @@ export function parsePathByTemplate(template: string, path: string): RouteCallba
         return null;
     }
 
-    let routeProps: RouteCallbackProps = { path: path, path_params: {} };
+    let routeProps: RouteHandlerProps = { path: path, path_params: {} };
 
     while (zippedSegments.length > 0) {
         let [templateSegment, pathSegment] = zippedSegments[0];
@@ -58,7 +108,7 @@ export function parsePathByTemplate(template: string, path: string): RouteCallba
         if (pathSegment == null) {
             return null;
         }
-        
+
         if (templateSegment.startsWith(":")) {
             routeProps.path_params[templateSegment.slice(1)] = pathSegment;
         } else if (templateSegment == "*") {

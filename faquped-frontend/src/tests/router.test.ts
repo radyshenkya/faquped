@@ -11,8 +11,18 @@ test("Parses simple path", () => {
     expect(res).toEqual({ path: path, path_params: {}})
 });
 
-test("Parses empty path", () => {
+test("Parses index path", () => {
     let path = "/";
+
+    let res = parsePathByTemplate(
+        path,
+        path,
+    );
+    expect(res).toEqual({ path: path, path_params: {}})
+})
+
+test("Parses empty path", () => {
+    let path = "";
 
     let res = parsePathByTemplate(
         path,
