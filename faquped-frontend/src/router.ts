@@ -34,6 +34,8 @@ export class Router {
     constructor(routes: Routes, error_route: RouteErrorHandler) {
         this.routes = routes;
         this.error_route = error_route;
+
+        this.registerClickEventListener();
     }
 
     route(path: string) {
@@ -56,21 +58,18 @@ export class Router {
         this.error_route(ROUTE_NOT_FOUND_ERROR);
     }
 
-    updateClickEvents() {
-        const elems = document.querySelectorAll('a[data-router]');
+    registerClickEventListener() {
+        document.addEventListener("click", (ev: any) => {
+            let router_href = ev.target.getAttribute('data-router-href');
 
-        for (const el of elems) {
-            if (el.getAttribute('router-listener') === 'true') {
-                continue;
+            if (router_href == null) {
+                return;
             }
 
-            el.setAttribute('router-listener', 'true');
-            el.addEventListener('click', (ev: any) => {
-                ev.preventDefault();
-                history.pushState({}, "", ev.target.href);
-                this.route(ev.target.pathname);
-            });
-        }
+            ev.preventDefault();
+            history.pushState({}, "", router_href);
+            this.route(router_href);
+        });
     }
 }
 
