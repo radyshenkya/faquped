@@ -3,10 +3,12 @@ import { RouteError, RouteHandlerProps } from "./router";
 import { HEADER } from "./components";
 import index from "./routes/index";
 import signin from "./routes/signin";
+import login from "./routes/login";
 
 export const routes = {
     "/": index,
     "/signin": signin,
+    "/login": login,
     "/error": (_props: RouteHandlerProps) => {
         throw new RouteError(HttpStatusCode.I_AM_A_TEAPOT, "I am a teapot bozo", null);
     },
